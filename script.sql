@@ -1,3 +1,11 @@
+DROP TABLE IF EXISTS suministra;
+DROP TABLE IF EXISTS fabrica;
+DROP SEQUENCE IF EXISTS public.fabrica_id_fabrica_seq;
+DROP TABLE IF EXISTS proveedor;
+DROP SEQUENCE IF EXISTS public.proveedor_id_prov_seq;
+DROP TABLE IF EXISTS prod_esta_rebajas;
+DROP TABLE IF EXISTS rebajas;
+DROP SEQUENCE IF EXISTS public.rebajas_id_rebajas_seq;
 DROP TABLE IF EXISTS compra_contiene_prod;
 DROP TABLE IF EXISTS dependiente;
 DROP SEQUENCE IF EXISTS public.dependiente_id_empleado_seq;
@@ -14,13 +22,14 @@ DROP TABLE IF EXISTS ciudad;
 DROP SEQUENCE IF EXISTS public.ciudad_id_ciudad_seq;
 DROP TABLE IF EXISTS marca;
 DROP SEQUENCE IF EXISTS public.marca_id_marca_seq;
-DROP TABLE IF EXISTS producto;
-DROP SEQUENCE IF EXISTS public.producto_id_producto_seq;
+DROP TABLE IF EXISTS prod_pertenece_camp;
 DROP TABLE IF EXISTS campana;
 DROP SEQUENCE IF EXISTS public.campana_id_campana_seq;
+DROP TABLE IF EXISTS producto;
+DROP SEQUENCE IF EXISTS public.producto_id_producto_seq;
 DROP TABLE IF EXISTS departamento;
 DROP SEQUENCE IF EXISTS public.departamento_id_dep_seq;
-DROP TABLE IF EXISTS prod_pertenece_camp;
+
 
 CREATE SEQUENCE public.ciudad_id_ciudad_seq
     START WITH 1
@@ -40,6 +49,10 @@ CREATE TABLE ciudad (
 INSERT INTO ciudad
 VALUES(DEFAULT, 'canarias', 'españa');
 
+INSERT INTO ciudad
+VALUES(DEFAULT, 'madrid', 'españa');
+
+-- No dejara añadir la siguiente fila ya que hemos puesto la restriccion de UNIQUE
 INSERT INTO ciudad
 VALUES(DEFAULT, 'madrid', 'españa');
 
@@ -98,7 +111,7 @@ CREATE TABLE tienda (
   CONSTRAINT unique_vals_tienda
   UNIQUE (nombre)
 );
-
+ 
 INSERT INTO tienda
 VALUES(DEFAULT, 'zara-la laguna', 'abc', 1, 1);
 
@@ -231,8 +244,13 @@ VALUES(DEFAULT, 'Camisa hombre', 6.99, 'prenda', 'M', 'H', 'algodon', NULL, NULL
 INSERT INTO producto
 VALUES(DEFAULT, 'Tacones rojo', 12, 'calzado', '40', 'M', NULL, 'rojo');
 
+-- Deja añadir sin poner tipo ya que la relacion es de tipo exclusiva parcial
 INSERT INTO producto
 VALUES(DEFAULT, 'Auriculares Mickey Mouse', 9.99);
+
+-- Va a fallar porque se ha puesto un atributo (color) que no corresponde a este tipo de producto
+INSERT INTO producto
+VALUES(DEFAULT, 'Collar', 6.90, 'complemento', NULL, NULL, NULL, 'rojo', 'bisuteria', NULL);
 
 SELECT *
 FROM producto;
@@ -283,6 +301,74 @@ VALUES(2, 2);
 
 SELECT id_producto, id_campana, nombre_prod, fecha_ini, fecha_fin
 FROM prod_pertenece_camp NATURAL JOIN campana NATURAL JOIN producto;
+
+--------------------------------------TABLA REBAJAS-------------------------------------------------
+
+CREATE SEQUENCE public.rebajas_id_rebajas_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+CREATE TABLE rebajas (
+  id_rebajas integer PRIMARY KEY DEFAULT nextval('public.rebajas_id_rebajas_seq'::regclass) NOT NULL,
+  fecha_ini DATE NOT NULL,
+  fecha_fin DATE NOT NULL
+);
+
+INSERT INTO rebajas
+VALUES(DEFAULT, '2022-01-01', '2022-03-01');
+
+INSERT INTO rebajas
+VALUES(DEFAULT, '2022-07-01', '2022-08-01');
+
+SELECT *
+FROM rebajas;
+
+-----------------------------------------------TABLA PROD-ESTA-REBAJAS----------------------------------
+
+CREATE TABLE prod_esta_rebajas (
+	id_rebajas INTEGER NOT NULL,
+	id_producto INTEGER NOT NULL,
+	CONSTRAINT fk_rebajas
+	FOREIGN KEY(id_rebajas)
+	REFERENCES rebajas(id_rebajas),
+	CONSTRAINT fk_producto
+	FOREIGN KEY(id_producto)
+	REFERENCES producto(id_producto)
+);
+
+CREATE OR REPLACE FUNCTION public.prod_in_campana()
+  RETURNS trigger AS
+$BODY$
+BEGIN
+    IF NEW.id_producto NOT IN (SELECT id_producto FROM prod_pertenece_camp) THEN
+      RAISE EXCEPTION 'El producto debe pertenecer a una campaña';
+    END IF;
+    RETURN NEW;	
+END;
+$BODY$
+  LANGUAGE plpgsql;
+
+
+CREATE TRIGGER prod_incl
+  BEFORE INSERT
+  ON prod_esta_rebajas
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.prod_in_campana(); 
+
+INSERT INTO prod_esta_rebajas
+VALUES(1, 1);
+
+INSERT INTO prod_esta_rebajas
+VALUES(2, 2);
+
+INSERT INTO prod_esta_rebajas
+VALUES(2, 3);
+
+SELECT id_producto, id_rebajas, nombre_prod, fecha_ini, fecha_fin
+FROM prod_esta_rebajas NATURAL JOIN producto NATURAL JOIN rebajas;
 
 ---------------------------------------------TABLA TIENDA-TIENE-PRODUCTO----------------------------------
 
@@ -436,3 +522,77 @@ VALUES(2, 2);
 
 SELECT id_compra, id_producto, id_tienda, nombre_prod
 FROM compra_contiene_prod NATURAL JOIN tienda_tiene_prod NATURAL JOIN PRODUCTO;
+
+----------------------------------------------TABLA PROVEEDOR-------------------------------------------
+
+CREATE SEQUENCE public.proveedor_id_prov_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+CREATE TABLE proveedor (
+  id_prov integer PRIMARY KEY DEFAULT nextval('public.proveedor_id_prov_seq'::regclass) NOT NULL,
+  nombre VARCHAR(100) NOT NULL,
+  email VARCHAR(200) NOT NULL
+);
+
+INSERT INTO proveedor
+VALUES(DEFAULT, 'proveedor1', 'abc@def.com');
+
+INSERT INTO proveedor
+VALUES(DEFAULT, 'proveedor2', 'abc@ghi.com');
+
+SELECT *
+FROM proveedor;
+
+------------------------------------------------TABLA FABRICA-----------------------------------------------
+
+CREATE SEQUENCE public.fabrica_id_fabrica_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+CREATE TABLE fabrica (
+  id_fabrica integer PRIMARY KEY DEFAULT nextval('public.fabrica_id_fabrica_seq'::regclass) NOT NULL,
+  nombre_fabrica VARCHAR(100) NOT NULL,
+  ubicacion VARCHAR(300) NOT NULL
+);
+
+INSERT INTO fabrica
+VALUES(DEFAULT, 'fabrica1', 'abc');
+
+INSERT INTO fabrica
+VALUES(DEFAULT, 'fabrica2', 'def');
+
+SELECT *
+FROM fabrica;
+
+-------------------------------------------------TABLA SUMINISTRA---------------------------------------
+
+CREATE TABLE suministra (
+  id_producto INTEGER NOT NULL,
+  id_fabrica INTEGER NOT NULL,
+  id_proveedor INTEGER NOT NULL,
+  CONSTRAINT fk_producto
+	FOREIGN KEY(id_producto)
+	REFERENCES producto(id_producto),
+  CONSTRAINT fk_fabrica
+	FOREIGN KEY(id_fabrica)
+	REFERENCES fabrica(id_fabrica)
+);
+
+INSERT INTO suministra
+VALUES(1, 1, 1);
+
+INSERT INTO suministra
+VALUES(2, 1, 1);
+
+INSERT INTO suministra
+VALUES(3, 2, 1);
+
+SELECT *
+FROM suministra;
