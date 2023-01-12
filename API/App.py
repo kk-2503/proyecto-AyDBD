@@ -19,31 +19,28 @@ def get_db_conn():
 
 @app.route('/')
 def index():
-    # Retorno de las prendas.
+    # Retorno de clientes.
     conn = get_db_conn()
     cur = conn.cursor()
     try:
         cur.execute('SELECT *'
-                    'FROM prenda;')
+                    'FROM cliente;')
     except (Exception, psycopg2.Error) as error :
-        print ("Error while performing API #1 (prenda): ", error)
+        print ("Error while performing API #1 (cliente): ", error)
         pass 
 
-    prenda = cur.fetchall()
+    cliente = cur.fetchall()
     cur.close()
     conn.close()
 
-    return render_template('index.html', prendas=prenda)
+    return render_template('index.html', clientes=cliente)
 
-# Crear 'prenda'
+# Crear 'cliente'
 @app.route('/create/', methods=('GET', 'POST'))
 def create():
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        precio = float(request.form['precio'])
-        material = request.form['material']
-        talla = request.form['talla']
-        genero = request.form['genero']
+        nombre_cliente = request.form['nombre_cliente']
+        email = request.form['email']
 
         try:
             conn = get_db_conn()
@@ -51,11 +48,11 @@ def create():
             pass
         try:
             cur = conn.cursor()
-            cur.execute('INSERT INTO prenda (nombre, precio, material, talla, genero)'
-                        'VALUES (%s, %s, %s, %s, %s)',
-                        (nombre, precio, material, talla, genero))
+            cur.execute('INSERT INTO cliente (nombre_cliente, email)'
+                        'VALUES (%s, %s)',
+                        (nombre_cliente, email))
         except (Exception, psycopg2.Error) as error :
-            print ("Error while inserting a prenda: ", error)
+            print ("Error while inserting a cliente: ", error)
             pass
         conn.commit()
         cur.close()
@@ -64,7 +61,7 @@ def create():
 
     return render_template('create.html')
 
-# Eliminar 'prenda'
+# Eliminar 'cliente'
 @app.route('/delete/', methods=('GET', 'POST'))
 def delete():
     if request.method == 'POST':
@@ -72,7 +69,7 @@ def delete():
 
         conn = get_db_conn()
         cur = conn.cursor()
-        cur.execute('DELETE FROM prenda'
+        cur.execute('DELETE FROM cliente'
                     'WHERE id=%s',
                     (id, ))
         conn.commit()
@@ -82,23 +79,20 @@ def delete():
 
     return render_template('delete.html')
 
-# Actualizar prenda
+# Actualizar cliente
 @app.route('/update/', methods=('GET', 'POST'))
 def update():
     if request.method == 'POST':
-        id = int(request.form['id'])
-        nombre = request.form['nombre']
-        precio = float(request.form['precio'])
-        material = request.form['material']
-        talla = request.form['talla']
-        genero = request.form['genero']
+        id_cliente = int(request.form['id_cliente'])
+        nombre_cliente = request.form['nombre_cliente']
+        email = request.form['email']
 
         conn = get_db_conn()
         cur = conn.cursor()
-        cur.execute('UPDATE prenda'
-                    ' SET nombre = %s, precio = %s, material = %s, talla = %s, genero = %s'
+        cur.execute('UPDATE cliente'
+                    ' SET nombre_cliente = %s, email = %s'
                     ' WHERE id=%s',
-                    (nombre, precio, material, talla, genero, id))
+                    (nombre_cliente, email, id_cliente))
         conn.commit()
         cur.close()
         conn.close()
