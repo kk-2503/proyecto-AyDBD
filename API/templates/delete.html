@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} Eliminar una prenda {% endblock %}</h1>
+    <form method="delete">
+        <p>
+            <label for="id">ID</label>
+            <input type="number" name="id"
+                   placeholder="Prenda id">
+            </input>
+        </p>
+        
+        <p>
+            <button type="delete">Delete</button>
+        </p>
+    </form>
+{% endblock %}

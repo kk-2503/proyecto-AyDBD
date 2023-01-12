@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} Añadir nueva Prenda {% endblock %}</h1>
+    <form method="post">
+        <p>
+            <label for="title">Nombre prenda</label>
+            <input type="text" name="nombre"
+                   placeholder="Nombre prenda">
+            </input>
+        </p>
+
+        <p>
+            <label for="precio">Precio</label>
+            <input type="number" name="precio" step="0.01"
+                   placeholder="Precio prenda">
+            </input>
+        </p>
+
+        <p>
+            <label for="material">Material</label>
+            <input type="text" name="material"
+                   placeholder="Material prenda">
+            </input>
+
+        <p>
+            <label for="talla">Talla</label>
+            <input type="text" name="talla"
+                   placeholder="Talla prenda">
+            </input>
+        </p>
+
+        <p>
+            <label for="genero">Genero</label>
+            <input type="text" name="genero"
+                   placeholder="Genero prenda">
+            </input>
+        </p>
+
+        <p>
+            <button type="submit">Submit</button>
+        </p>
+       
+    </form>
+{% endblock %}

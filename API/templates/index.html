@@ -1,0 +1,10 @@
+ {% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} Prendas {% endblock %}</h1>
+    {% for prenda in prendas %}
+        <div class='prenda'>
+            <h3>#{{ prenda[0] }} - {{ prenda[1] }} - {{ prenda[2] }} - {{ prenda[3] }} - {{ prenda[4] }} - {{ prenda[5] }}</h3>   
+        </div>
+    {% endfor %}
+{% endblock %} 
